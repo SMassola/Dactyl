@@ -6,22 +6,38 @@
     <title></title>
   </head>
   <body>
+    <div class="modal">
+      <div class="modal-content">
+        <div class="close">x</div>
+        <div class="instructions">
+          <div class="rules">
+            <div class="doclickbombs">
+              <img class="purple" src="./assets/purplebomb.png"/>
+              <img class="pink" src="./assets/pinkbomb.png"/>
+              <img class="click" src="./assets/click.png"/>
+            </div>
+            <div class="dontclickbombs">
+              <img class="lightblue" src="./assets/lightbluebomb.png"/>
+              <img class="darkblue" src="./assets/darkbluebomb.png"/>
+              <img class="black" src="./assets/blackbomb.png"/>
+              <img class="dontclick" src="./assets/dontclick.png"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <canvas id="canvas"></canvas>
+    <canvas id="canvas2"></canvas>
     <div class="game-info">
+      <div class="title">Dactyl</div>
       <div class="attributes">
         <div id="score"></div>
         <div id="lives"></div>
       </div>
-      <div class="instructions">
-        <div class="title">HOW TO PLAY</div>
-        <div class="rules">
-          <li>1 to 4 bombs will light up at random</li>
-          <li>Avoid clicking blue bombs, you will lose a life</li>
-          <li>Click red and pink bombs to defuse them and score points</li>
-          <li>You lose when you have 0 lives or there are 5 red bombs</li>
-          <li>Good Luck!</li>
-        </div>
+      <div class="buttons">
         <button onclick="start();" class="start-button">PLAY</button>
+        <button onclick="popup();" class="instructions-button">INSTRUCTIONS</button>
       </div>
     <div>
     <script src="js/main.js"></script>

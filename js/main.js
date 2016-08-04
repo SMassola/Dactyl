@@ -1,83 +1,97 @@
-let ignited = new Object();
+var ignited = new Object();
 var canvas = document.getElementById("canvas");
+var canvas2 = document.getElementById("canvas2");
 var ctx = canvas.getContext("2d");
+var ctx2 = canvas2.getContext("2d");
 ctx.canvas.width = 750;
-ctx.canvas.height = window.innerHeight + 5;
+ctx.canvas.height = window.innerHeight;
+ctx2.canvas.width = 750;
+ctx2.canvas.height = window.innerHeight;
 var originalData;
-var originalBot;
 var img = new Image();
 img.crossOrigin = "anonymous";
 img.onload = populateField;
 img.src = "https://cdn4.iconfinder.com/data/icons/BRILLIANT/networking/png/256/bomb.png";
-let score = 0;
-let lives = 3;
+var score = 0;
+var lives = 8;
 
 function populateField() {
   document.getElementById('score').innerHTML = "Score: " + score;
   document.getElementById('lives').innerHTML = "Lives: " + lives;
-
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4 ; j++) {
-      ctx.drawImage(img, i*185, j*170, 200, 200);
+  for (var i = 0; i < 4; i++) {
+    for (var j = 0; j < 4 ; j++) {
+      ctx.drawImage(img, i*ctx.canvas.height*0.25, j*ctx.canvas.height*0.25, ctx.canvas.height * .25, ctx.canvas.height * .25);
     }
   }
 
-  originalData = ctx.getImageData(0, 25, 185, 170);
-  originalBot = ctx.getImageData(0, 535, 185, 170);
+  // for (var i = 0; i < 4; i++) {
+  //   for (var j = 0; j < 4 ; j++) {
+  //     ctx.rect(i*ctx.canvas.height*0.25+10, j*ctx.canvas.height*0.25+45, ctx.canvas.height*0.25-50, ctx.canvas.height*0.25-50);
+  //     ctx.stroke();
+  //   }
+  // }
+
+  originalData = ctx.getImageData(0, 0, ctx.canvas.height * .25, ctx.canvas.height * .25);
+}
+
+function popup() {
+  var modal = document.getElementsByClassName('modal')[0] ;
+  modal.style.display = "inline-block";
+  var esc = document.getElementsByClassName("close")[0];
+  esc.onclick = function() {
+      modal.style.display = "none";
+  };
 }
 
 function gameOver() {
-  console.log("You Lose");
+  popup();
 }
+
+// function numOfIgnited() {
 //
-// for (let i = 0; i < 4; i++) {
-//   for (let j = 0; j < 4 ; j++) {
-//     ctx.rect(i*185+10, j*170+50, 145, 145);
-//     ctx.stroke();
+//   var count = 0;
+//   for (var i = 0 ; i < 4; i++) {
+//     for (var j = 0 ; j < 4 ; j++) {
+//       if (ignited[`${i}${j}`] === "red") {
+//         count++;
+//       }
+//     }
 //   }
+//   return count;
 // }
 
-function numOfIgnited() {
-
-  let count = 0;
-  for (let i = 0 ; i < 4; i++) {
-    for (let j = 0 ; j < 4 ; j++) {
-      if (ignited[`${i}${j}`] === "red") {
-        count++;
-      }
-    }
-  }
-  console.log(count);
-  return count;
-}
-
 function reset() {
+  var frameRate = 60.0;
+  var frameDelay = 1000.0/frameRate;
+  var explosionInterval = setInterval(function() {
+    update(frameDelay);
+  }, frameDelay);
+
   score = 0;
-  lives = 3;
-  for (let i = 0 ; i < 4; i++) {
-    for (let j = 0 ; j < 4 ; j++) {
+  lives = 8;
+  for (var i = 0 ; i < 4; i++) {
+    for (var j = 0 ; j < 4 ; j++) {
       ignited[`${i}${j}`] = false;
     }
   }
   populateField();
 }
 
-function checkIfLost(ignitionInterval) {
-  let numLit = numOfIgnited();
-  if (numLit >= 5 || lives <= 0) {
-    canvas.removeEventListener('click', _handleClick);
+function checkIfLost(loss, ignitionInterval) {
+  // var numLit = numOfIgnited();
+  if (lives <= 0) {
+    canvas2.removeEventListener('click', _handleClick);
     clearInterval(ignitionInterval);
+    clearInterval(loss);
     gameOver();
   }
 }
 
 function start() {
   reset();
-  canvas.addEventListener('click', _handleClick);
-  let ignitionInterval = setInterval(function() {
-    checkIfLost(ignitionInterval);
-    igniteBombs();
-  }, 1000);
+  canvas2.addEventListener('click', _handleClick);
+  var ignite = setInterval(function() {igniteBombs();}, 1500);
+  var check = setInterval(function() {checkIfLost(check, ignite);}, 50);
 }
 //colorshit += .0001 every .01 seconds
 
@@ -85,52 +99,71 @@ function getColor(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function redCheck(pos, checkIfRed) {
+  if (ignited[`${pos[0]}${pos[1]}`] === "red") {
+    lives -= 1;
+    ignited[`${pos[0]}${pos[1]}`] = "black";
+    recolorBombs(pos, 2);
+    document.getElementById('lives').innerHTML = "Lives: " + lives;
+    createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
+                    pos[1]*ctx.canvas.height*0.25+62.75+45,
+                    "red");
+    createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
+                    pos[1]*ctx.canvas.height*0.25+62.75+45,
+                    "yellow");
+    createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
+                    pos[1]*ctx.canvas.height*0.25+62.75+45,
+                    "#FFA318");
+  }
+}
 
 function colorShifter(pos) {
-  let colorshift;
 
-  let startTime = new Date().getTime();
+  var colorshift;
+  var startTime = new Date().getTime();
+
   if (ignited[`${pos[0]}${pos[1]}`] === "red") {
     colorshift = 0;
+    setTimeout(redCheck.bind(null, pos), 3000);
   } else {
     colorshift = 1;
   }
 
-  let shift = setInterval(function() {
-
+  var shift = setInterval(function() {
     recolorBombs(pos, colorshift);
     colorshift += .0004;
     if (new Date().getTime() - startTime > 1000) {
       clearInterval(shift);
     }
   }, .01);
+
 }
 
 function igniteBombs() {
-  let pos = selectBombPos();
-  let pos2 = selectBombPos();
-  let pos3 = selectBombPos();
-  let pos4 = selectBombPos();
+  var pos = selectBombPos();
+  var pos2 = selectBombPos();
+  var pos3 = selectBombPos();
+  var pos4 = selectBombPos();
 
   if (pos) {
-    let shift = colorShifter(pos);
+    var shift = colorShifter(pos);
   }
   if (pos2) {
-    let shift2 = colorShifter(pos2);
+    var shift2 = colorShifter(pos2);
   }
   if (pos3) {
-    let shift3 = colorShifter(pos3);
+    var shift3 = colorShifter(pos3);
   }
   if (pos4) {
-    let shift4 = colorShifter(pos4);
+    var shift4 = colorShifter(pos4);
   }
 
 }
 
 function selectBombPos() {
-  let posx = Math.floor(Math.random()*4);
-  let posy = Math.floor(Math.random()*4);
-  if (ignited[`${posx}${posy}`] === "red") {
+  var posx = Math.floor(Math.random()*4);
+  var posy = Math.floor(Math.random()*4);
+  if (ignited[`${posx}${posy}`] === "red" || ignited[`${posx}${posy}`] === "black") {
     return undefined;
   }
 
@@ -146,11 +179,11 @@ function selectBombPos() {
 }
 
 function _handleClick(e) {
+  var dim = ctx.canvas.height*0.25;
+  var clickPos = [e.pageX, e.pageY];
 
-  let clickPos = [e.pageX, e.pageY];
-
-  if (clickPos[0]> 20 && clickPos[0] < 165 && clickPos[1] > 60 && clickPos[1] < 205) {
-    ctx.putImageData(originalData, 0, 25);
+  if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
+    ctx.putImageData(originalData, 0, 0);
     if (ignited["00"] === "red") {
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -164,8 +197,8 @@ function _handleClick(e) {
     }
   }
 
-  if (clickPos[0]> 20 && clickPos[0] < 165 && clickPos[1] > 230 && clickPos[1] < 375) {
-    ctx.putImageData(originalData, 0, 195);
+  if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
+    ctx.putImageData(originalData, 0, dim);
     if (ignited["01"] === "red") {
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -179,8 +212,8 @@ function _handleClick(e) {
     }
   }
 
-  if (clickPos[0]> 20 && clickPos[0] < 165 && clickPos[1] > 400 && clickPos[1] < 545) {
-    ctx.putImageData(originalData, 0, 365);
+  if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
+    ctx.putImageData(originalData, 0, 2*dim);
     if (ignited["02"] === "red") {
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -194,8 +227,8 @@ function _handleClick(e) {
     }
   }
 
-  if (clickPos[0]> 20 && clickPos[0] < 165 && clickPos[1] > 575 && clickPos[1] < 710) {
-    ctx.putImageData(originalBot, 0, 535);
+  if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
+    ctx.putImageData(originalData, 0, 3*dim);
     if (ignited["03"] === "red") {
       ignited["03"] = false;
       score += 1;
@@ -209,8 +242,8 @@ function _handleClick(e) {
     }
   }
 
-  if (clickPos[0]> 205 && clickPos[0] < 350 && clickPos[1] > 60 && clickPos[1] < 205) {
-    ctx.putImageData(originalData, 185, 25);
+  if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
+    ctx.putImageData(originalData, dim, 0);
     if (ignited["10"] === "red") {
       ignited["10"] = false;
       score += 1;
@@ -223,8 +256,8 @@ function _handleClick(e) {
       ignited["10"] = false;
     }
   }
-  if (clickPos[0]> 205 && clickPos[0] < 350 && clickPos[1] > 230 && clickPos[1] < 375) {
-    ctx.putImageData(originalData, 185, 195);
+  if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
+    ctx.putImageData(originalData, dim, dim);
     if (ignited["11"] === "red") {
       ignited["11"] = false;
       score += 1;
@@ -237,8 +270,8 @@ function _handleClick(e) {
       ignited["11"] = false;
     }
   }
-  if (clickPos[0]> 205 && clickPos[0] < 350 && clickPos[1] > 400 && clickPos[1] < 545) {
-    ctx.putImageData(originalData, 185, 365);
+  if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
+    ctx.putImageData(originalData, dim, 2*dim);
     if (ignited["12"] === "red") {
       ignited["12"] = false;
       score += 1;
@@ -251,8 +284,8 @@ function _handleClick(e) {
       ignited["12"] = false;
     }
   }
-  if (clickPos[0]> 205 && clickPos[0] < 350 && clickPos[1] > 575 && clickPos[1] < 710) {
-    ctx.putImageData(originalBot, 185, 535);
+  if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
+    ctx.putImageData(originalData, dim, 3*dim);
     if (ignited["13"] === "red") {
       ignited["13"] = false;
       score += 1;
@@ -266,8 +299,8 @@ function _handleClick(e) {
     }
   }
 
-  if (clickPos[0]> 390 && clickPos[0] < 535 && clickPos[1] > 60 && clickPos[1] < 205) {
-    ctx.putImageData(originalData, 370, 25);
+  if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
+    ctx.putImageData(originalData, 2*dim, 0);
     if (ignited["20"] === "red") {
       ignited["20"] = false;
       score += 1;
@@ -280,8 +313,8 @@ function _handleClick(e) {
       ignited["20"] = false;
     }
   }
-  if (clickPos[0]> 390 && clickPos[0] < 535 && clickPos[1] > 230 && clickPos[1] < 375) {
-    ctx.putImageData(originalData, 370, 195);
+  if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
+    ctx.putImageData(originalData, 2*dim, dim);
     if (ignited["21"] === "red") {
       ignited["21"] = false;
       score += 1;
@@ -294,8 +327,8 @@ function _handleClick(e) {
       ignited["21"] = false;
     }
   }
-  if (clickPos[0]> 390 && clickPos[0] < 535 && clickPos[1] > 400 && clickPos[1] < 545) {
-    ctx.putImageData(originalData, 370, 365);
+  if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
+    ctx.putImageData(originalData, 2*dim, 2*dim);
     if (ignited["22"] === "red") {
       ignited["22"] = false;
       score += 1;
@@ -308,8 +341,8 @@ function _handleClick(e) {
       ignited["22"] = false;
     }
   }
-  if (clickPos[0]> 390 && clickPos[0] < 535 && clickPos[1] > 575 && clickPos[1] < 710) {
-    ctx.putImageData(originalBot, 370, 535);
+  if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
+    ctx.putImageData(originalData, 2*dim, 3*dim);
     if (ignited["23"] === "red") {
       ignited["23"] = false;
       score += 1;
@@ -323,8 +356,8 @@ function _handleClick(e) {
     }
   }
 
-  if (clickPos[0]> 575 && clickPos[0] < 720 && clickPos[1] > 60 && clickPos[1] < 205) {
-    ctx.putImageData(originalData, 555, 25);
+  if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
+    ctx.putImageData(originalData, 3*dim, 0);
     if (ignited["30"] === "red") {
       ignited["30"] = false;
       score += 1;
@@ -337,8 +370,8 @@ function _handleClick(e) {
       ignited["30"] = false;
     }
   }
-  if (clickPos[0]> 575 && clickPos[0] < 720 && clickPos[1] > 230 && clickPos[1] < 375) {
-    ctx.putImageData(originalData, 555, 195);
+  if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
+    ctx.putImageData(originalData, 3*dim, dim);
     if (ignited["31"] === "red") {
       ignited["31"] = false;
       score += 1;
@@ -351,8 +384,8 @@ function _handleClick(e) {
       ignited["31"] = false;
     }
   }
-  if (clickPos[0]> 575 && clickPos[0] < 720 && clickPos[1] > 400 && clickPos[1] < 545) {
-    ctx.putImageData(originalData, 555, 365);
+  if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
+    ctx.putImageData(originalData, 3*dim, 2*dim);
     if (ignited["32"] === "red") {
       ignited["32"] = false;
       score += 1;
@@ -365,8 +398,8 @@ function _handleClick(e) {
       ignited["32"] = false;
     }
   }
-  if (clickPos[0]> 575 && clickPos[0] < 720 && clickPos[1] > 575 && clickPos[1] < 710) {
-    ctx.putImageData(originalBot, 555, 535);
+  if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
+    ctx.putImageData(originalData, 3*dim, 3*dim);
     if (ignited["33"] === "red") {
       ignited["33"] = false;
       score += 1;
@@ -382,15 +415,19 @@ function _handleClick(e) {
 }
 
 function recolorBombs(pos, colorshift) {
-  var imgData = ctx.getImageData(pos[0]*185, pos[1]*170 + 25, 185, 170);
+  var imgData = ctx.getImageData(
+    pos[0]*ctx.canvas.height*0.25,
+    pos[1]*ctx.canvas.height*0.25,
+    ctx.canvas.height * .25,
+    ctx.canvas.height * .25);
 
   var data = imgData.data;
 
   for (var i = 0; i < data.length; i += 4) {
-    let red = data[i + 0];
-    let green = data[i + 1];
-    let blue = data[i + 2];
-    let alpha = data[i + 3];
+    var red = data[i + 0];
+    var green = data[i + 1];
+    var blue = data[i + 2];
+    var alpha = data[i + 3];
 
     // skip transparent/semiTransparent pixels
     if (alpha < 200) {
@@ -401,15 +438,24 @@ function recolorBombs(pos, colorshift) {
     var hue = hsl.h * 360;
 
     // change blueish pixels to the new color
-    if (hue > 100 && hue < 400) {
+    if (hue > 100 && hue < 300) {
       var newRgb = hslToRgb(hsl.h + colorshift, hsl.s, hsl.l);
       data[i + 0] = newRgb.r;
       data[i + 1] = newRgb.g;
       data[i + 2] = newRgb.b;
       data[i + 3] = 255;
     }
+    if (ignited[`${pos[0]}${pos[1]}`] === "black") {
+      if (hue > 100 && hue < 400) {
+        var newRgb2 = hslToRgb(hsl.h + colorshift, hsl.s, hsl.l);
+        data[i + 0] = newRgb2.r;
+        data[i + 1] = newRgb2.g;
+        data[i + 2] = newRgb2.b;
+        data[i + 3] = 255;
+      }
+    }
   }
-  ctx.putImageData(imgData, pos[0]*185, pos[1]*170 + 25);
+  ctx.putImageData(imgData, pos[0]*ctx.canvas.height*0.25, pos[1]*ctx.canvas.height*0.25);
 }
 
 function rgbToHsl(r, g, b) {
@@ -472,4 +518,93 @@ function hslToRgb(h, s, l) {
     g: Math.round(g * 255),
     b: Math.round(b * 255),
   });
+}
+
+var particles = [];
+
+function Particle () {
+	this.scale = 1.0;
+	this.x = 0;
+	this.y = 0;
+	this.radius = 20;
+	this.color = "#000";
+	this.velocityX = 0;
+	this.velocityY = 0;
+	this.scaleSpeed = 0.5;
+
+	this.update = function(ms) {
+		// shrinking
+		this.scale -= this.scaleSpeed * ms / 1000.0;
+
+		if (this.scale <= 0) {
+			this.scale = 0;
+		}
+		// moving away from explosion center
+		this.x += this.velocityX * ms/1000.0;
+		this.y += this.velocityY * ms/1000.0;
+	};
+
+	this.draw = function(context2D) {
+		// translating the 2D context to the particle coordinates
+		context2D.save();
+		context2D.translate(this.x, this.y);
+		context2D.scale(this.scale, this.scale);
+
+		// drawing a filled circle in the particle's local space
+		context2D.beginPath();
+		context2D.arc(0, 0, this.radius, 0, Math.PI*2, true);
+		context2D.closePath();
+
+		context2D.fillStyle = this.color;
+		context2D.fill();
+
+		context2D.restore();
+	};
+}
+
+function randomFloat (min, max) {
+	return min + Math.random() * (max-min);
+}
+
+function createExplosion(x, y, color) {
+	var minSize = 10;
+	var maxSize = 30;
+	var count = 10;
+	var minSpeed = 60.0;
+	var maxSpeed = 200.0;
+	var minScaleSpeed = 1.0;
+	var maxScaleSpeed = 4.0;
+
+	for (var angle=0; angle<360; angle += Math.round(360/count)) {
+		var particle = new Particle();
+
+		particle.x = x;
+		particle.y = y;
+
+		particle.radius = randomFloat(minSize, maxSize);
+
+		particle.color = color;
+
+		particle.scaleSpeed = randomFloat(minScaleSpeed, maxScaleSpeed);
+
+		var speed = randomFloat(minSpeed, maxSpeed);
+
+		particle.velocityX = speed * Math.cos(angle * Math.PI / 180.0);
+		particle.velocityY = speed * Math.sin(angle * Math.PI / 180.0);
+
+		particles.push(particle);
+	}
+}
+
+function update (frameDelay) {
+	// draw a white background to clear canvas
+  ctx2.clearRect(0, 0, canvas.width, canvas.height);
+
+	// update and draw particles
+	for (var i=0; i<particles.length; i++) {
+		var particle = particles[i];
+
+		particle.update(frameDelay);
+		particle.draw(ctx2);
+	}
 }
