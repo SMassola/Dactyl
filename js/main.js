@@ -1,19 +1,49 @@
 var ignited = new Object();
+var redchecker = new Object();
+
 var canvas = document.getElementById("canvas");
 var canvas2 = document.getElementById("canvas2");
+
 var ctx = canvas.getContext("2d");
 var ctx2 = canvas2.getContext("2d");
+
 ctx.canvas.height = window.innerHeight;
-ctx.canvas.width = ctx.canvas.height;
 ctx2.canvas.height = window.innerHeight;
+
+ctx.canvas.width = ctx.canvas.height;
 ctx2.canvas.width = ctx2.canvas.height;
+
 var originalData;
+
 var img = new Image();
 img.crossOrigin = "anonymous";
 img.onload = populateField;
 img.src = "https://cdn4.iconfinder.com/data/icons/BRILLIANT/networking/png/256/bomb.png";
+
 var score = 0;
 var lives = 8;
+
+function popup() {
+  var modal = document.getElementsByClassName('modal')[0] ;
+  modal.style.display = "flex";
+  var esc = document.getElementsByClassName("close")[0];
+  esc.onclick = function() {
+    modal.style.display = "none";
+  };
+}
+
+function gameOver() {
+  popup();
+}
+
+function checkIfLost(loss, ignitionInterval) {
+  if (lives <= 0) {
+    canvas2.removeEventListener('click', _handleClick);
+    clearInterval(ignitionInterval);
+    clearInterval(loss);
+    gameOver();
+  }
+}
 
 function populateField() {
   document.getElementById('score').innerHTML = "Score: " + score;
@@ -23,44 +53,11 @@ function populateField() {
       ctx.drawImage(img, i*ctx.canvas.height*0.25, j*ctx.canvas.height*0.25, ctx.canvas.height * .25, ctx.canvas.height * .25);
     }
   }
-
-  // for (var i = 0; i < 4; i++) {
-  //   for (var j = 0; j < 4 ; j++) {
-  //     ctx.rect(i*ctx.canvas.height*0.25+10, j*ctx.canvas.height*0.25+45, ctx.canvas.height*0.25-50, ctx.canvas.height*0.25-50);
-  //     ctx.stroke();
-  //   }
-  // }
-
   originalData = ctx.getImageData(0, 0, ctx.canvas.height * .25, ctx.canvas.height * .25);
 }
 
-function popup() {
-  var modal = document.getElementsByClassName('modal')[0] ;
-  modal.style.display = "inline-block";
-  var esc = document.getElementsByClassName("close")[0];
-  esc.onclick = function() {
-      modal.style.display = "none";
-  };
-}
-
-function gameOver() {
-  popup();
-}
-
-// function numOfIgnited() {
-//
-//   var count = 0;
-//   for (var i = 0 ; i < 4; i++) {
-//     for (var j = 0 ; j < 4 ; j++) {
-//       if (ignited[`${i}${j}`] === "red") {
-//         count++;
-//       }
-//     }
-//   }
-//   return count;
-// }
-
 function reset() {
+  clearInterval(explosionInterval);
   var frameRate = 60.0;
   var frameDelay = 1000.0/frameRate;
   var explosionInterval = setInterval(function() {
@@ -77,23 +74,15 @@ function reset() {
   populateField();
 }
 
-function checkIfLost(loss, ignitionInterval) {
-  // var numLit = numOfIgnited();
-  if (lives <= 0) {
-    canvas2.removeEventListener('click', _handleClick);
-    clearInterval(ignitionInterval);
-    clearInterval(loss);
-    gameOver();
-  }
-}
-
 function start() {
+  clearInterval(ignite);
+  clearInterval(check);
   reset();
   canvas2.addEventListener('click', _handleClick);
-  var ignite = setInterval(function() {igniteBombs();}, 1500);
+  var ignite = setInterval(function() {igniteBombs();}, 1000);
   var check = setInterval(function() {checkIfLost(check, ignite);}, 50);
 }
-//colorshit += .0001 every .01 seconds
+//colorshift += .0001 every .01 seconds
 
 function getColor(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -113,30 +102,34 @@ function redCheck(pos, checkIfRed) {
                     "yellow");
     createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
                     pos[1]*ctx.canvas.height*0.25+62.75+45,
-                    "#FFA318");
+                    "orange");
+    setTimeout(function() {
+      ignited[`${pos[0]}${pos[1]}`] = false;
+      ctx.putImageData(
+        originalData,
+        pos[0]*ctx.canvas.height*0.25,
+        pos[1]*ctx.canvas.height*0.25);
+    }, 2000);
   }
 }
 
 function colorShifter(pos) {
 
   var colorshift;
-  var startTime = new Date().getTime();
 
   if (ignited[`${pos[0]}${pos[1]}`] === "red") {
     colorshift = 0;
-    setTimeout(redCheck.bind(null, pos), 3000);
+    redchecker[`${pos[0]}${pos[1]}`]=setTimeout(redCheck.bind(null, pos), 3000);
   } else {
     colorshift = 1;
   }
 
+  var startTime = new Date().getTime();
   var shift = setInterval(function() {
     recolorBombs(pos, colorshift);
     colorshift += .0004;
-    if (new Date().getTime() - startTime > 1000) {
-      clearInterval(shift);
-    }
   }, .01);
-
+  setTimeout(clearInterval.bind(null, shift), 1000);
 }
 
 function igniteBombs() {
@@ -185,10 +178,12 @@ function _handleClick(e) {
   if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
     ctx.putImageData(originalData, 0, 0);
     if (ignited["00"] === "red") {
+      clearTimeout(redchecker["00"]);
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
       ignited["00"] = false;
-    } else if (ignited["00"] === "blue"){
+      // setTimeout(function() {ignited["00"] = false;}, 2000);
+    } else if (ignited["00"] === "blue") {
       score -= 1;
       lives -= 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -200,9 +195,11 @@ function _handleClick(e) {
   if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
     ctx.putImageData(originalData, 0, dim);
     if (ignited["01"] === "red") {
+      clearTimeout(redchecker["01"]);
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
       ignited["01"] = false;
+      // setTimeout(function() {ignited["01"] = false;}, 2000);
     } else if (ignited["01"] === "blue"){
       score -= 1;
       lives -= 1;
@@ -215,9 +212,11 @@ function _handleClick(e) {
   if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
     ctx.putImageData(originalData, 0, 2*dim);
     if (ignited["02"] === "red") {
+      clearTimeout(redchecker["02"]);
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
-      ignited["02"] = false;
+      ignited["02"] = "black";
+      // setTimeout(function() {ignited["02"] = false;}, 2000);
     } else if (ignited["02"] === "blue"){
       score -= 1;
       lives -= 1;
@@ -230,7 +229,9 @@ function _handleClick(e) {
   if (clickPos[0]> 10 && clickPos[0] < dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
     ctx.putImageData(originalData, 0, 3*dim);
     if (ignited["03"] === "red") {
+      clearTimeout(redchecker["03"]);
       ignited["03"] = false;
+      // setTimeout(function() {ignited["03"] = false;}, 2000);
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
     } else if (ignited["03"] === "blue"){
@@ -245,6 +246,7 @@ function _handleClick(e) {
   if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
     ctx.putImageData(originalData, dim, 0);
     if (ignited["10"] === "red") {
+      clearTimeout(redchecker["10"]);
       ignited["10"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -259,6 +261,7 @@ function _handleClick(e) {
   if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
     ctx.putImageData(originalData, dim, dim);
     if (ignited["11"] === "red") {
+      clearTimeout(redchecker["11"]);
       ignited["11"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -273,6 +276,7 @@ function _handleClick(e) {
   if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
     ctx.putImageData(originalData, dim, 2*dim);
     if (ignited["12"] === "red") {
+      clearTimeout(redchecker["12"]);
       ignited["12"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -287,6 +291,7 @@ function _handleClick(e) {
   if (clickPos[0]> dim+10 && clickPos[0] < 2*dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
     ctx.putImageData(originalData, dim, 3*dim);
     if (ignited["13"] === "red") {
+      clearTimeout(redchecker["13"]);
       ignited["13"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -302,6 +307,7 @@ function _handleClick(e) {
   if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
     ctx.putImageData(originalData, 2*dim, 0);
     if (ignited["20"] === "red") {
+      clearTimeout(redchecker["20"]);
       ignited["20"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -316,6 +322,7 @@ function _handleClick(e) {
   if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
     ctx.putImageData(originalData, 2*dim, dim);
     if (ignited["21"] === "red") {
+      clearTimeout(redchecker["21"]);
       ignited["21"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -330,6 +337,7 @@ function _handleClick(e) {
   if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
     ctx.putImageData(originalData, 2*dim, 2*dim);
     if (ignited["22"] === "red") {
+      clearTimeout(redchecker["22"]);
       ignited["22"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -344,6 +352,7 @@ function _handleClick(e) {
   if (clickPos[0]> 2*dim+10 && clickPos[0] < 3*dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
     ctx.putImageData(originalData, 2*dim, 3*dim);
     if (ignited["23"] === "red") {
+      clearTimeout(redchecker["23"]);
       ignited["23"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -359,6 +368,7 @@ function _handleClick(e) {
   if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > 45 && clickPos[1] < dim) {
     ctx.putImageData(originalData, 3*dim, 0);
     if (ignited["30"] === "red") {
+      clearTimeout(redchecker["30"]);
       ignited["30"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -373,6 +383,7 @@ function _handleClick(e) {
   if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > dim+45 && clickPos[1] < 2*dim) {
     ctx.putImageData(originalData, 3*dim, dim);
     if (ignited["31"] === "red") {
+      clearTimeout(redchecker["31"]);
       ignited["31"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -387,6 +398,7 @@ function _handleClick(e) {
   if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > 2*dim+45 && clickPos[1] < 3*dim) {
     ctx.putImageData(originalData, 3*dim, 2*dim);
     if (ignited["32"] === "red") {
+      clearTimeout(redchecker["32"]);
       ignited["32"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
@@ -401,6 +413,7 @@ function _handleClick(e) {
   if (clickPos[0]> 3*dim+10 && clickPos[0] < 4*dim-40 && clickPos[1] > 3*dim+45 && clickPos[1] < 4*dim) {
     ctx.putImageData(originalData, 3*dim, 3*dim);
     if (ignited["33"] === "red") {
+      clearTimeout(redchecker["33"]);
       ignited["33"] = false;
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
