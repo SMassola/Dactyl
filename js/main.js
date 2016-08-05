@@ -128,7 +128,7 @@ function colorShifter(pos) {
   var shift = setInterval(function() {
     recolorBombs(pos, colorshift);
     colorshift += .0004;
-  }, .01);
+  }, .001);
   setTimeout(clearInterval.bind(null, shift), 1000);
 }
 
