@@ -30,7 +30,6 @@
         </div>
       </div>
     </div>
-
     <canvas id="canvas"></canvas>
     <canvas id="canvas2"></canvas>
     <div class="game-info">
@@ -40,10 +39,27 @@
         <div id="lives"></div>
       </div>
       <div class="buttons">
-        <button onclick="start();" class="start-button">PLAY</button>
-        <button onclick="popup();" class="instructions-button">INSTRUCTIONS</button>
+        <button
+          id="start"
+          onclick="start();"
+          class="start-button">
+          PLAY
+        </button>
+        <button
+          id="instructions"
+          onclick="popup();"
+          class="instructions-button">
+          INSTRUCTIONS
+        </button>
+        <button
+          id="toggle"
+          onclick="toggleFlag();"
+          class="toggle-button">
+          TRANSITIONS OFF
+        </button>
       </div>
-    <div>
+      <div class="footer">Attention: toggle color transition if bombs are not changing color</div>
+    </div>
     <script src="js/main.js"></script>
   </body>
 </html>

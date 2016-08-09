@@ -97,34 +97,36 @@ body {
 #canvas2 {
   cursor: pointer;
   position: relative;
-}
-
-#canvas2 {
   background: transparent;
 }
 
 .buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
+  flex-wrap: wrap;
 }
 
-.start-button, .instructions-button {
+.start-button, .instructions-button, .toggle-button {
+  margin: 10px;
   background: transparent;
   color: white;
   font-size: 30px;
   border: 1px solid white;
   height: 50px;
   width: 250px;
-
 }
 
-.start-button:hover, .instructions-button:hover {
+.toggle-button {
+  font-size: 26px;
+}
+
+.start-button:hover, .instructions-button:hover, .toggle-button:hover {
   background: white;
   color: black;
   border: 1px solid black;
 }
 
-.start-button:focus, .instructions-button:focus {
+.start-button:focus, .instructions-button:focus, .toggle-button:focus {
   outline: none;
 }
 
@@ -184,4 +186,15 @@ div#score, div#lives {
   color: white;
   text-decoration: none;
   cursor: pointer;
+}
+
+.footer {
+  margin: 0 auto;
+  position: absolute;
+  bottom: 0;
+}
+
+.side-bar {
+  width: 100%;
+  height: 100%;
 }

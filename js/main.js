@@ -14,6 +14,13 @@ ctx.canvas.width = ctx.canvas.height;
 ctx2.canvas.width = ctx2.canvas.height;
 
 var originalData;
+var transitions = true;
+
+function toggleFlag() {
+  transitions = !transitions;
+  var toggler = document.getElementById("toggle");
+  toggler.innerHTML = transitions ? "TRANSITIONS OFF" : "TRANSITIONS ON";
+}
 
 var img = new Image();
 img.crossOrigin = "anonymous";
@@ -34,6 +41,9 @@ function popup() {
 
 function gameOver() {
   popup();
+  document.getElementById("start").onclick = function() {
+    start();
+  };
 }
 
 function checkIfLost(loss, ignitionInterval) {
@@ -50,10 +60,19 @@ function populateField() {
   document.getElementById('lives').innerHTML = "Lives: " + lives;
   for (var i = 0; i < 4; i++) {
     for (var j = 0; j < 4 ; j++) {
-      ctx.drawImage(img, i*ctx.canvas.height*0.25, j*ctx.canvas.height*0.25, ctx.canvas.height * .25, ctx.canvas.height * .25);
+      ctx.drawImage(
+        img,
+        i*ctx.canvas.height*0.25,
+        j*ctx.canvas.height*0.25,
+        ctx.canvas.height * .25,
+        ctx.canvas.height * .25
+      );
     }
   }
-  originalData = ctx.getImageData(0, 0, ctx.canvas.height * .25, ctx.canvas.height * .25);
+
+  originalData = ctx.getImageData(
+    ctx.canvas.height*0.25, ctx.canvas.height*0.25, ctx.canvas.height * .25, ctx.canvas.height * .25
+  );
 }
 
 function reset() {
@@ -75,6 +94,7 @@ function reset() {
 }
 
 function start() {
+  document.getElementById("start").setAttribute("onclick", null);
   clearInterval(ignite);
   clearInterval(check);
   reset();
@@ -124,12 +144,22 @@ function colorShifter(pos) {
     colorshift = 1;
   }
 
-  var startTime = new Date().getTime();
-  var shift = setInterval(function() {
-    recolorBombs(pos, colorshift);
-    colorshift += .0004;
-  }, .001);
-  setTimeout(clearInterval.bind(null, shift), 1000);
+  ctx.putImageData(
+    originalData,
+    pos[0]*ctx.canvas.height*0.25,
+    pos[1]*ctx.canvas.height*0.25
+  );
+
+  if (transitions) {
+    var shift = setInterval(function() {
+      recolorBombs(pos, colorshift);
+      colorshift += .0004;
+    }, .001);
+    setTimeout(clearInterval.bind(null, shift), 1500);
+  } else {
+    console.log(colorshift + 0.4);
+      recolorBombs(pos, colorshift + .26);
+  }
 }
 
 function igniteBombs() {
@@ -150,7 +180,6 @@ function igniteBombs() {
   if (pos4) {
     var shift4 = colorShifter(pos4);
   }
-
 }
 
 function selectBombPos() {
@@ -610,7 +639,6 @@ function createExplosion(x, y, color) {
 }
 
 function update (frameDelay) {
-	// draw a white background to clear canvas
   ctx2.clearRect(0, 0, canvas.width, canvas.height);
 
 	// update and draw particles
