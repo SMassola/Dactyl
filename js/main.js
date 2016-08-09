@@ -75,7 +75,7 @@ function populateField() {
   }
 
   originalData = ctx.getImageData(
-    ctx.canvas.height*0.25, ctx.canvas.height*0.25, ctx.canvas.height * .25, ctx.canvas.height * .25
+    ctx.canvas.height*0.25, ctx.canvas.height*0.25, ctx.canvas.height*0.25, ctx.canvas.height*0.25
   );
 }
 
@@ -150,11 +150,6 @@ function colorShifter(positions) {
     } else {
       colorshift[`${pos[0]}${pos[1]}`] = 1;
     }
-    ctx.putImageData(
-      originalData,
-      pos[0]*ctx.canvas.height*0.25,
-      pos[1]*ctx.canvas.height*0.25
-    );
   });
   if (transitions) {
     var shift = setInterval(function() {
@@ -168,6 +163,11 @@ function colorShifter(positions) {
     }, 1000);
   } else {
     positions.forEach((pos) => {
+      ctx.putImageData(
+        originalData,
+        pos[0]*ctx.canvas.height*0.25,
+        pos[1]*ctx.canvas.height*0.25
+      );
       recolorBombs(pos, colorshift[`${pos[0]}${pos[1]}`] + .24);
     });
   }
