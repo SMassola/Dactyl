@@ -73,6 +73,7 @@ body {
 }
 
 .instructions {
+  max-width: 100%;
   min-height: 80%;
   align-items: center;
   display: flex;
@@ -174,6 +175,8 @@ div#score, div#lives {
 }
 
 .close {
+  display: flex;
+  justify-content: flex-end;
   text-align: center;
   margin: 5px;
   color: #aaa;

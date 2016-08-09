@@ -1,5 +1,9 @@
 var ignited = new Object();
 var redchecker = new Object();
+var colorshift = new Object();
+var lightBombs;
+var gameEnd;
+var explosionInterval;
 
 var canvas = document.getElementById("canvas");
 var canvas2 = document.getElementById("canvas2");
@@ -76,10 +80,9 @@ function populateField() {
 }
 
 function reset() {
-  clearInterval(explosionInterval);
   var frameRate = 60.0;
   var frameDelay = 1000.0/frameRate;
-  var explosionInterval = setInterval(function() {
+  explosionInterval = setInterval(function() {
     update(frameDelay);
   }, frameDelay);
 
@@ -95,14 +98,16 @@ function reset() {
 
 function start() {
   document.getElementById("start").setAttribute("onclick", null);
-  clearInterval(ignite);
-  clearInterval(check);
+  clearInterval(lightBombs);
+  clearInterval(gameEnd);
+  clearInterval(explosionInterval);
   reset();
   canvas2.addEventListener('click', _handleClick);
-  var ignite = setInterval(function() {igniteBombs();}, 1000);
-  var check = setInterval(function() {checkIfLost(check, ignite);}, 50);
+  gameEnd = setInterval(function() {
+    checkIfLost(gameEnd, lightBombs);
+    igniteBombs();
+  }, 1000);
 }
-//colorshift += .0001 every .01 seconds
 
 function getColor(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -114,14 +119,15 @@ function redCheck(pos, checkIfRed) {
     ignited[`${pos[0]}${pos[1]}`] = "black";
     recolorBombs(pos, 2);
     document.getElementById('lives').innerHTML = "Lives: " + lives;
-    createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
-                    pos[1]*ctx.canvas.height*0.25+62.75+45,
+    var dim = ctx.canvas.height*0.25;
+    createExplosion(pos[0]*dim+dim/2-10,
+                    pos[1]*dim+dim/2+22.5,
                     "red");
-    createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
-                    pos[1]*ctx.canvas.height*0.25+62.75+45,
+    createExplosion(pos[0]*dim+dim/2-10,
+                    pos[1]*dim+dim/2+22.5,
                     "yellow");
-    createExplosion(pos[0]*ctx.canvas.height*0.25+62.75+10,
-                    pos[1]*ctx.canvas.height*0.25+62.75+45,
+    createExplosion(pos[0]*dim+dim/2-10,
+                    pos[1]*dim+dim/2+22.5,
                     "orange");
     setTimeout(function() {
       ignited[`${pos[0]}${pos[1]}`] = false;
@@ -133,32 +139,37 @@ function redCheck(pos, checkIfRed) {
   }
 }
 
-function colorShifter(pos) {
+function colorShifter(positions) {
 
-  var colorshift;
-
-  if (ignited[`${pos[0]}${pos[1]}`] === "red") {
-    colorshift = 0;
-    redchecker[`${pos[0]}${pos[1]}`]=setTimeout(redCheck.bind(null, pos), 3000);
-  } else {
-    colorshift = 1;
-  }
-
-  ctx.putImageData(
-    originalData,
-    pos[0]*ctx.canvas.height*0.25,
-    pos[1]*ctx.canvas.height*0.25
-  );
-
+  positions.forEach((pos) => {
+    if (ignited[`${pos[0]}${pos[1]}`] === "red") {
+      colorshift[`${pos[0]}${pos[1]}`] = 0;
+      redchecker[`${pos[0]}${pos[1]}`] = setTimeout(
+        redCheck.bind(null, pos), 3000
+      );
+    } else {
+      colorshift[`${pos[0]}${pos[1]}`] = 1;
+    }
+    ctx.putImageData(
+      originalData,
+      pos[0]*ctx.canvas.height*0.25,
+      pos[1]*ctx.canvas.height*0.25
+    );
+  });
   if (transitions) {
     var shift = setInterval(function() {
-      recolorBombs(pos, colorshift);
-      colorshift += .0004;
-    }, .001);
-    setTimeout(clearInterval.bind(null, shift), 1500);
+      positions.forEach((pos) => {
+        recolorBombs(pos, colorshift[`${pos[0]}${pos[1]}`]);
+        colorshift[`${pos[0]}${pos[1]}`] += .0006;
+      }, 1);
+    });
+    setTimeout(function() {
+      clearInterval(shift);
+    }, 1000);
   } else {
-    console.log(colorshift + 0.4);
-      recolorBombs(pos, colorshift + .26);
+    positions.forEach((pos) => {
+      recolorBombs(pos, colorshift[`${pos[0]}${pos[1]}`] + .24);
+    });
   }
 }
 
@@ -168,18 +179,20 @@ function igniteBombs() {
   var pos3 = selectBombPos();
   var pos4 = selectBombPos();
 
+  var positions =  [];
   if (pos) {
-    var shift = colorShifter(pos);
+    positions.push(pos);
   }
   if (pos2) {
-    var shift2 = colorShifter(pos2);
+    positions.push(pos2);
   }
   if (pos3) {
-    var shift3 = colorShifter(pos3);
+    positions.push(pos3);
   }
   if (pos4) {
-    var shift4 = colorShifter(pos4);
+    positions.push(pos4);
   }
+  colorShifter(positions);
 }
 
 function selectBombPos() {
@@ -211,7 +224,6 @@ function _handleClick(e) {
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
       ignited["00"] = false;
-      // setTimeout(function() {ignited["00"] = false;}, 2000);
     } else if (ignited["00"] === "blue") {
       score -= 1;
       lives -= 1;
@@ -228,7 +240,6 @@ function _handleClick(e) {
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
       ignited["01"] = false;
-      // setTimeout(function() {ignited["01"] = false;}, 2000);
     } else if (ignited["01"] === "blue"){
       score -= 1;
       lives -= 1;
@@ -245,7 +256,6 @@ function _handleClick(e) {
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
       ignited["02"] = "black";
-      // setTimeout(function() {ignited["02"] = false;}, 2000);
     } else if (ignited["02"] === "blue"){
       score -= 1;
       lives -= 1;
@@ -260,7 +270,6 @@ function _handleClick(e) {
     if (ignited["03"] === "red") {
       clearTimeout(redchecker["03"]);
       ignited["03"] = false;
-      // setTimeout(function() {ignited["03"] = false;}, 2000);
       score += 1;
       document.getElementById('score').innerHTML = "Score: " + score;
     } else if (ignited["03"] === "blue"){
