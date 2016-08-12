@@ -465,7 +465,7 @@ function _handleClick(e) {
   }
 }
 
-function recolorBombs(pos, colorshift) {
+function recolorBombs(pos, shift) {
   var imgData = ctx.getImageData(
     pos[0]*ctx.canvas.height*0.25,
     pos[1]*ctx.canvas.height*0.25,
@@ -480,7 +480,6 @@ function recolorBombs(pos, colorshift) {
     var blue = data[i + 2];
     var alpha = data[i + 3];
 
-    // skip transparent/semiTransparent pixels
     if (alpha < 200) {
       continue;
     }
@@ -488,9 +487,8 @@ function recolorBombs(pos, colorshift) {
     var hsl = rgbToHsl(red, green, blue);
     var hue = hsl.h * 360;
 
-    // change blueish pixels to the new color
     if (hue > 100 && hue < 300) {
-      var newRgb = hslToRgb(hsl.h + colorshift, hsl.s, hsl.l);
+      var newRgb = hslToRgb(hsl.h + shift, hsl.s, hsl.l);
       data[i + 0] = newRgb.r;
       data[i + 1] = newRgb.g;
       data[i + 2] = newRgb.b;
@@ -498,7 +496,7 @@ function recolorBombs(pos, colorshift) {
     }
     if (ignited[`${pos[0]}${pos[1]}`] === "black") {
       if (hue > 100 && hue < 400) {
-        var newRgb2 = hslToRgb(hsl.h + colorshift, hsl.s, hsl.l);
+        var newRgb2 = hslToRgb(hsl.h + shift, hsl.s, hsl.l);
         data[i + 0] = newRgb2.r;
         data[i + 1] = newRgb2.g;
         data[i + 2] = newRgb2.b;
@@ -516,7 +514,7 @@ function rgbToHsl(r, g, b) {
   var h, s, l = (max + min) / 2;
 
   if (max == min) {
-    h = s = 0; // achromatic
+    h = s = 0;
   } else {
     var d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -541,6 +539,14 @@ function rgbToHsl(r, g, b) {
   });
 }
 
+function hue2rgb(p, q, t) {
+  if (t < 0) t += 1;
+  if (t > 1) t -= 1;
+  if (t < 1 / 6) return p + (q - p) * 6 * t;
+  if (t < 1 / 2) return q;
+  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+  return p;
+}
 
 function hslToRgb(h, s, l) {
   var r, g, b;
@@ -548,15 +554,6 @@ function hslToRgb(h, s, l) {
   if (s == 0) {
     r = g = b = l; // achromatic
   } else {
-    function hue2rgb(p, q, t) {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    }
-
     var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
     var p = 2 * l - q;
     r = hue2rgb(p, q, h + 1 / 3);
@@ -570,6 +567,7 @@ function hslToRgb(h, s, l) {
     b: Math.round(b * 255),
   });
 }
+
 
 var particles = [];
 

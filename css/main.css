@@ -53,7 +53,7 @@ html, body {
 body {
   background-size: cover;
   display: flex;
-  background: url("http://wallpapercraze.com/images/wallpapers/desertbomb-737270.jpeg");
+  background: url("http://res.cloudinary.com/deeucxgdi/image/upload/v1470984690/Desert_Bomb_srbhrk.jpg");
   background-size: cover;
   align-items: center;
 }
@@ -172,6 +172,10 @@ div#score, div#lives {
   width: 100%;
   color: white;
   bottom: 20%;
+}
+
+.x {
+  z-index: 1;
 }
 
 .close {
